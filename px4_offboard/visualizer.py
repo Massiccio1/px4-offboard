@@ -35,6 +35,8 @@
 __author__ = "Jaeyoung Lim"
 __contact__ = "jalim@ethz.ch"
 
+import os
+
 from re import M
 import numpy as np
 
@@ -67,13 +69,21 @@ class PX4Visualizer(Node):
 
     def __init__(self):
         super().__init__('px4_visualizer')
-
+        
+        if 'RVIZ_MAX_BUFFER' in os.environ:
+            self.BUFFER=int(os.environ['RVIZ_MAX_BUFFER'])
+            print("trovato buffer")
+        else:
+            self.BUFFER=0
+            
         ## Configure subscritpions
         qos_profile = QoSProfile(
             reliability=QoSReliabilityPolicy.RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT,
             history=QoSHistoryPolicy.RMW_QOS_POLICY_HISTORY_KEEP_LAST,
             depth=1
         )
+        
+        print("create subscriptions")
 
         self.attitude_sub = self.create_subscription(
             VehicleAttitude,
@@ -103,6 +113,11 @@ class PX4Visualizer(Node):
         self.vehicle_path_msg = Path()
         self.setpoint_path_msg = Path()
         timer_period = 0.05  # seconds
+        
+        
+                
+        print("spinning")
+
         self.timer = self.create_timer(timer_period, self.cmdloop_callback)
 
     def vehicle_attitude_callback(self, msg):
@@ -154,18 +169,31 @@ class PX4Visualizer(Node):
         return msg
 
     def cmdloop_callback(self):
+        
+        #print("callback")
+        
         vehicle_pose_msg = vector2PoseMsg('map', self.vehicle_local_position, self.vehicle_attitude)
         self.vehicle_pose_pub.publish(vehicle_pose_msg)
 
         # Publish time history of the vehicle path
         self.vehicle_path_msg.header = vehicle_pose_msg.header
         self.vehicle_path_msg.poses.append(vehicle_pose_msg) 
+        
+        if self.BUFFER:
+            self.vehicle_path_msg.poses = self.vehicle_path_msg.poses[-self.BUFFER:]
+        
         self.vehicle_path_pub.publish(self.vehicle_path_msg)
 
         # Publish time history of the vehicle path
         setpoint_pose_msg = vector2PoseMsg('map', self.setpoint_position, self.vehicle_attitude)
         self.setpoint_path_msg.header = setpoint_pose_msg.header
         self.setpoint_path_msg.poses.append(setpoint_pose_msg)
+        
+        #limito la dimensione
+        if self.BUFFER:
+            self.setpoint_path_msg.poses = self.setpoint_path_msg.poses[self.BUFFER:]
+        
+        #print("path len:", len(self.setpoint_path_msg.poses))
         self.setpoint_path_pub.publish(self.setpoint_path_msg)
 
         # Publish arrow markers for velocity

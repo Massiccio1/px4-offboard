@@ -70,8 +70,8 @@ class OffboardControl(Node):
         self.nav_state = VehicleStatus.NAVIGATION_STATE_MAX
         self.dt = timer_period
         self.theta = 0.0
-        self.radius = 10.0
-        self.omega = 0.5
+        self.radius = 5.0
+        self.omega = 0.2
  
     def vehicle_status_callback(self, msg):
         # TODO: handle NED->ENU transformation
@@ -92,7 +92,7 @@ class OffboardControl(Node):
             trajectory_msg = TrajectorySetpoint()
             trajectory_msg.position[0] = self.radius * np.cos(self.theta)
             trajectory_msg.position[1] = self.radius * np.sin(self.theta)
-            trajectory_msg.position[2] = -5.0
+            trajectory_msg.position[2] = -5.0 +  np.sin(self.theta)
             self.publisher_trajectory.publish(trajectory_msg)
 
             self.theta = self.theta + self.omega * self.dt
