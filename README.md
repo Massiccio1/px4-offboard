@@ -1,6 +1,9 @@
 # px4-offboard
 This `repository` contains a python examples for offboard control on ROS2 with [PX4](https://px4.io/)
 
+This forked version adds support for ```RVIZ_MAX_BUFFER``` enviroment variable to limit the buffer size to remove old traces
+
+
 The `px4_offboard` package contains the following nodes
 - `offboard_control.py`: Example of offboard position control using position setpoints
 - `visualizer.py`: Used for visualizing vehicle states in Rviz
@@ -27,7 +30,6 @@ make px4_sitl gazebo
 On the second terminal terminal, run the micro-ros-agent which will perform the mapping between Micro XRCE-DDS and RTPS. So that ROS2 Nodes are able to communicate with the PX4 micrortps_client.
 ```
 micro-ros-agent udp4 --port 8888
-```
 
 In order to run the offboard position control example, open a third terminal and run the the node.
 This runs two ros nodes, which publishes offboard position control setpoints and the visualizer.
