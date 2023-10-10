@@ -191,7 +191,7 @@ class PX4Visualizer(Node):
         
         #limito la dimensione
         if self.BUFFER:
-            self.setpoint_path_msg.poses = self.setpoint_path_msg.poses[self.BUFFER:]
+            self.setpoint_path_msg.poses = self.setpoint_path_msg.poses[-self.BUFFER:]
         
         #print("path len:", len(self.setpoint_path_msg.poses))
         self.setpoint_path_pub.publish(self.setpoint_path_msg)
