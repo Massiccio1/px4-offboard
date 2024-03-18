@@ -88,30 +88,21 @@ class PX4Visualizer(Node):
         
         print("create subscriptions")
 
-        # self.attitude_sub = self.create_subscription(
-        #     VehicleAttitude,
-        #     '/fmu/out/vehicle_attitude',
-        #     self.vehicle_attitude_callback,
-        #     qos_profile)
-        
-        self.odo_out_sub = self.create_subscription(
-           VehicleOdometry,
-           '/fmu/out/vehicle_odometry',
-           self.odo_out_callback,
-           qos_profile)
-        
-        self.odo_in_sub = self.create_subscription(
-           VehicleOdometry,
-           '/fmu/in/vehicle_visual_odometry',
-           self.odo_in_callback,
-           qos_profile)
-        
-        # self.local_position_sub = self.create_subscription(
-        #     VehicleLocalPosition,
-        #     '/fmu/out/vehicle_local_position',
-        #     self.vehicle_local_position_callback,
-        #     qos_profile)
-        
+        self.attitude_sub = self.create_subscription(
+            VehicleAttitude,
+            '/fmu/out/vehicle_attitude',
+            self.vehicle_attitude_callback,
+            qos_profile)
+        #self.local_position_sub = self.create_subscription(
+        #    VehicleOdometry,
+        #    '/fmu/in/vehicle_visual_odometry',
+        #    self.vehicle_odometry_callback,
+        #    qos_profile)
+        self.local_position_sub = self.create_subscription(
+            VehicleLocalPosition,
+            '/fmu/out/vehicle_local_position',
+            self.vehicle_local_position_callback,
+            qos_profile)
         self.setpoint_sub = self.create_subscription(
             TrajectorySetpoint,
             '/fmu/in/trajectory_setpoint',
@@ -119,21 +110,18 @@ class PX4Visualizer(Node):
             qos_profile)
 
         self.vehicle_pose_pub = self.create_publisher(PoseStamped, '/px4_visualizer/vehicle_pose', 10)
-        self.opti_pose_pub = self.create_publisher(PoseStamped, '/px4_visualizer/opti_pose', 10)
         #self.opti_pose_pub = self.create_publisher(PoseStamped, '/px4_visualizer/opti_pose', 10)
 
         self.vehicle_vel_pub = self.create_publisher(Marker, '/px4_visualizer/vehicle_velocity', 10)
         self.vehicle_path_pub = self.create_publisher(Path, '/px4_visualizer/vehicle_path', 10)
         self.setpoint_path_pub = self.create_publisher(Path, '/px4_visualizer/setpoint_path', 10)
         self.vehicle_attitude = np.array([1.0, 0.0, 0.0, 0.0])
-        self.odo_att = np.array([1.0, 0.0, 0.0, 0.0])
+        self.opti_attitude = np.array([1.0, 0.0, 0.0, 0.0])
 
         self.vehicle_local_position = np.array([0.0, 0.0, 0.0])
-        self.odo_pos = np.array([0.0, 0.0, 0.0])
         self.vehicle_local_velocity = np.array([0.0, 0.0, 0.0])
-        self.odo_vel = np.array([0.0, 0.0, 0.0])
         self.setpoint_position = np.array([0.0, 0.0, 0.0])
-        
+        self.opti_position = np.array([0.0, 0.0, 0.0])
         
         self.vehicle_path_msg = Path()
         self.setpoint_path_msg = Path()
@@ -144,37 +132,6 @@ class PX4Visualizer(Node):
         print("spinning")
 
         self.timer = self.create_timer(timer_period, self.cmdloop_callback)
-        
-    def odo_out_callback(self,msg):
-        werwer=0
-        self.vehicle_attitude[0] = msg.q[0]
-        self.vehicle_attitude[1] = msg.q[1]
-        self.vehicle_attitude[2] = -msg.q[2]
-        self.vehicle_attitude[3] = -msg.q[3]
-        
-        self.vehicle_local_position[0] = msg.position[0]
-        self.vehicle_local_position[1] = -msg.position[1]
-        self.vehicle_local_position[2] = -msg.position[2]
-        
-        self.vehicle_local_velocity[0] = msg.velocity[0]
-        self.vehicle_local_velocity[1] = -msg.velocity[1]
-        self.vehicle_local_velocity[2] = -msg.velocity[2]
-        
-        
-        
-    def odo_in_callback(self,msg):
-        asdas=0
-        self.odo_att[0] = msg.q[0]
-        self.odo_att[1] = msg.q[1]
-        self.odo_att[2] = -msg.q[2]
-        self.odo_att[3] = -msg.q[3]
-        
-        self.odo_pos[0] = msg.position[0]
-        self.odo_pos[1] = -msg.position[1]
-        self.odo_pos[2] = -msg.position[2]
-        self.odo_vel[0] = msg.velocity[0]
-        self.odo_vel[1] = -msg.velocity[1]
-        self.odo_vel[2] = -msg.velocity[2]
 
     def vehicle_attitude_callback(self, msg):
         # TODO: handle NED->ENU transformation 
@@ -191,7 +148,12 @@ class PX4Visualizer(Node):
         self.vehicle_local_velocity[0] = msg.vx
         self.vehicle_local_velocity[1] = -msg.vy
         self.vehicle_local_velocity[2] = -msg.vz
-    
+        
+    def vehicle_odometry_callback(self, msg):
+        # TODO: handle NED->ENU transformation 
+        self.opti_position[0] = msg.position[0]
+        self.opti_position[1] = -msg.position[1]
+        self.opti_position[2] = -msg.position[2]
 
 
     def trajectory_setpoint_callback(self, msg):
@@ -232,9 +194,6 @@ class PX4Visualizer(Node):
         
         vehicle_pose_msg = vector2PoseMsg('map', self.vehicle_local_position, self.vehicle_attitude)
         self.vehicle_pose_pub.publish(vehicle_pose_msg)
-        
-        opti_pose_msg = vector2PoseMsg('map', self.odo_pos, self.odo_att)
-        self.opti_pose_pub.publish(opti_pose_msg)
 
         # Publish time history of the vehicle path
         self.vehicle_path_msg.header = vehicle_pose_msg.header
