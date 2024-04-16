@@ -146,7 +146,6 @@ class PX4Visualizer(Node):
         self.timer = self.create_timer(timer_period, self.cmdloop_callback)
         
     def odo_out_callback(self,msg):
-        werwer=0
         self.vehicle_attitude[0] = msg.q[0]
         self.vehicle_attitude[1] = msg.q[1]
         self.vehicle_attitude[2] = -msg.q[2]
